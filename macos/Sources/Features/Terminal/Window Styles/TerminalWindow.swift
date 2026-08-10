@@ -252,14 +252,16 @@ class TerminalWindow: NSWindow {
     }
 
     override func addTitlebarAccessoryViewController(_ childViewController: NSTitlebarAccessoryViewController) {
-        super.addTitlebarAccessoryViewController(childViewController)
-
         // Tab bar is attached as a titlebar accessory view controller (layout bottom). We
         // can detect when it is shown or hidden by overriding add/remove and searching for
         // it. This has been verified to work on macOS 12 to 26
         if isTabBar(childViewController) {
+            guard derivedConfig.macosTabStyle == .native else { return }
             childViewController.identifier = Self.tabBarIdentifier
+            super.addTitlebarAccessoryViewController(childViewController)
             tabBarDidAppear()
+        } else {
+            super.addTitlebarAccessoryViewController(childViewController)
         }
     }
 
@@ -588,6 +590,7 @@ class TerminalWindow: NSWindow {
         let backgroundOpacity: Double
         let macosWindowButtons: Ghostty.MacOSWindowButtons
         let macosTitlebarStyle: Ghostty.Config.MacOSTitlebarStyle
+        let macosTabStyle: Ghostty.Config.MacOSTabStyle
         let windowCornerRadius: CGFloat
 
         init() {
@@ -597,6 +600,7 @@ class TerminalWindow: NSWindow {
             self.macosWindowButtons = .visible
             self.backgroundBlur = .disabled
             self.macosTitlebarStyle = .default
+            self.macosTabStyle = .native
             self.windowCornerRadius = 16
         }
 
@@ -607,6 +611,7 @@ class TerminalWindow: NSWindow {
             self.macosWindowButtons = config.macosWindowButtons
             self.backgroundBlur = config.backgroundBlur
             self.macosTitlebarStyle = config.macosTitlebarStyle
+            self.macosTabStyle = config.macosTabStyle
 
             // Set corner radius based on macos-titlebar-style
             // Native, transparent, and hidden styles use 16pt radius

@@ -3353,6 +3353,21 @@ keybind: Keybinds = .{},
 /// Changing this option at runtime only applies to new windows.
 @"macos-titlebar-style": MacTitlebarStyle = .transparent,
 
+/// Controls how tabs are presented in normal terminal windows on macOS.
+///
+/// Valid values are:
+///
+///   * `native` - Use the native horizontal macOS tab bar. This is the default.
+///   * `sidebar` - Replace the native tab bar with a vertical sidebar on the
+///     left side of the terminal window.
+///
+/// The sidebar uses the same native tab group and tab lifecycle as the native
+/// tab bar, so existing tab keybindings, restoration, splits, and undo continue
+/// to work.
+///
+/// Changing this option at runtime only applies to new windows.
+@"macos-tab-style": MacTabStyle = .native,
+
 /// Whether the proxy icon in the macOS titlebar is visible. The proxy icon
 /// is the icon that represents the folder of the current working directory.
 /// You can see this very clearly in the macOS built-in Terminal.app
@@ -9081,6 +9096,12 @@ pub const MacTitlebarStyle = enum {
     transparent,
     tabs,
     hidden,
+};
+
+/// See macos-tab-style
+pub const MacTabStyle = enum {
+    native,
+    sidebar,
 };
 
 /// See macos-titlebar-proxy-icon
