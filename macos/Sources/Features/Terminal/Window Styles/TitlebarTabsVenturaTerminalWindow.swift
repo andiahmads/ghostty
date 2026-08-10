@@ -354,6 +354,11 @@ class TitlebarTabsVenturaTerminalWindow: TerminalWindow {
     // This is called by macOS for native tabbing in order to add the tab bar. We hook into
     // this, detect the tab bar being added, and override its behavior.
     override func addTitlebarAccessoryViewController(_ childViewController: NSTitlebarAccessoryViewController) {
+        guard derivedConfig.macosTabStyle == .native else {
+            super.addTitlebarAccessoryViewController(childViewController)
+            return
+        }
+
         let isTabBar = self.titlebarTabs && isTabBar(childViewController)
 
         if isTabBar {
