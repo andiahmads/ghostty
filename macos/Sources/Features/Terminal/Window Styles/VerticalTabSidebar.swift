@@ -5,6 +5,7 @@ import SwiftUI
 /// A custom tab list that presents the existing native macOS tab group vertically.
 struct VerticalTabSidebar: View {
     weak var windowController: TerminalController?
+    @Binding var fileBrowserVisible: Bool
 
     @StateObject private var model = VerticalTabSidebarModel()
     @AppStorage("ghostty.verticalTabSidebarWidth") private var sidebarWidth = 250.0
@@ -78,6 +79,15 @@ struct VerticalTabSidebar: View {
             }
             .buttonStyle(.plain)
             .help("New Tab")
+
+            Button {
+                fileBrowserVisible.toggle()
+            } label: {
+                Image(systemName: fileBrowserVisible ? "sidebar.right" : "folder")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .help(fileBrowserVisible ? "Hide File Browser" : "Show File Browser")
         }
         .padding(8)
     }

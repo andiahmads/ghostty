@@ -2,12 +2,13 @@
 <h1>
 <p align="center">
   <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Logo" width="128">
-  <br>Ghostty
+  <br>Momok
 </h1>
   <p align="center">
-    Fast, native, feature-rich terminal emulator pushing modern features.
+    A macOS-focused Ghostty fork with vertical tabs, a project explorer,
+    and an integrated Neovim editor workflow.
     <br />
-    A native GUI or embeddable library via <code>libghostty</code>.
+    Built on the fast, native Ghostty terminal and <code>libghostty</code>.
     <br />
     <a href="#about">About</a>
     ·
@@ -20,6 +21,30 @@
     <a href="HACKING.md">Developing</a>
   </p>
 </p>
+
+## Momok
+
+Momok is a personal project fork of
+[Ghostty](https://github.com/ghostty-org/ghostty). It keeps Ghostty's native
+terminal core while adding a macOS workspace experience inspired by modern
+terminal applications.
+
+Features added by Momok include:
+
+- Configurable native horizontal tabs or a resizable vertical tab sidebar.
+- A resizable project file explorer that follows the focused terminal's
+  working directory.
+- Lazy directory loading, file filtering, refresh, Finder reveal, and path
+  copying from the explorer.
+- A single right-side Neovim editor split that is reused when opening files.
+- Neovim RPC integration so additional files open as editor tabs instead of
+  creating more terminal splits.
+- A persistent editor tabline with file-type labels, modified-buffer
+  indicators, tab switching, and clickable close buttons.
+
+Momok is independently maintained and is not an official Ghostty release.
+The original Ghostty documentation is retained below for upstream behavior,
+building instructions, and project history.
 
 ## About
 

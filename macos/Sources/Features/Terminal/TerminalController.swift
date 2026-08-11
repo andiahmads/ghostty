@@ -61,6 +61,11 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
     /// The notification cancellable for focused surface property changes.
     private var surfaceAppearanceCancellables: Set<AnyCancellable> = []
 
+    /// The Vim split owned by the file browser. Subsequent file selections reuse
+    /// this surface instead of creating an unbounded number of splits.
+    weak var fileBrowserEditorSurface: Ghostty.SurfaceView?
+    var fileBrowserEditorSocket: String?
+
     init(_ ghostty: Ghostty.App,
          withBaseConfig base: Ghostty.SurfaceConfiguration? = nil,
          withSurfaceTree tree: SplitTree<Ghostty.SurfaceView>? = nil,

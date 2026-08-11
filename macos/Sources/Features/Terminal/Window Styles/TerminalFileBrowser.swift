@@ -1,0 +1,496 @@
+import AppKit
+import SwiftUI
+
+/// A file explorer rooted at the working directory of the focused terminal surface.
+struct TerminalFileBrowser: View {
+    let rootURL: URL?
+    let openFile: (URL) -> Void
+
+    @StateObject private var model = TerminalFileBrowserModel()
+    @AppStorage("ghostty.fileBrowserWidth") private var browserWidth = 280.0
+    @AppStorage("ghostty.fileBrowserVisible") private var isVisible = true
+    @State private var resizeStartWidth: Double?
+    @State private var searchText = ""
+    @State private var searchVisible = false
+
+    private let minimumWidth = 200.0
+    private let maximumWidth = 520.0
+
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 0) {
+                header
+
+                if searchVisible {
+                    searchField
+                }
+
+                Divider()
+
+                content
+            }
+            .frame(width: browserWidth)
+            .background(Color(nsColor: .windowBackgroundColor))
+
+            resizeHandle
+        }
+        .onAppear { model.setRoot(rootURL) }
+        .onChange(of: rootURL) { model.setRoot($0) }
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "doc.on.doc")
+                .foregroundStyle(.primary)
+
+            Image(systemName: "bubble.left")
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Button {
+                searchVisible.toggle()
+                if !searchVisible { searchText = "" }
+            } label: {
+                Image(systemName: "magnifyingglass")
+            }
+            .buttonStyle(.plain)
+            .help("Search Files")
+
+            Button {
+                model.reload()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .buttonStyle(.plain)
+            .help("Refresh")
+
+            Button {
+                isVisible = false
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.plain)
+            .help("Close File Browser")
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Filter files...", text: $searchText)
+                .textFieldStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+        .padding(.horizontal, 8)
+        .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let root = model.root {
+            ScrollView(.vertical) {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    FileBrowserRootRow(root: root, model: model)
+
+                    if model.isExpanded(root) {
+                        ForEach(model.filteredChildren(of: root, matching: searchText)) { entry in
+                            FileBrowserRow(
+                                entry: entry,
+                                depth: 1,
+                                model: model,
+                                searchText: searchText,
+                                openFile: openFile)
+                        }
+                    }
+                }
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } else {
+            VStack(spacing: 8) {
+                Image(systemName: "folder.badge.questionmark")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+                Text("No Working Directory")
+                    .font(.headline)
+                Text("Focus a terminal to browse its files.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private var resizeHandle: some View {
+        ZStack {
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(width: 1)
+
+            Rectangle()
+                .fill(Color.clear)
+                .frame(width: 7)
+                .contentShape(Rectangle())
+        }
+        .frame(width: 7)
+        .onHover { hovering in
+            if hovering {
+                NSCursor.resizeLeftRight.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if resizeStartWidth == nil { resizeStartWidth = browserWidth }
+                    let initialWidth = resizeStartWidth ?? browserWidth
+                    browserWidth = min(maximumWidth, max(minimumWidth, initialWidth + value.translation.width))
+                }
+                .onEnded { _ in resizeStartWidth = nil }
+        )
+    }
+}
+
+private struct FileBrowserRootRow: View {
+    let root: URL
+    @ObservedObject var model: TerminalFileBrowserModel
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 9, weight: .semibold))
+                .rotationEffect(model.isExpanded(root) ? .degrees(90) : .zero)
+                .frame(width: 10)
+            Image(systemName: model.isExpanded(root) ? "folder.fill" : "folder")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 16)
+            Text(root.lastPathComponent)
+                .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 26)
+        .background(Color.primary.opacity(0.07))
+        .contentShape(Rectangle())
+        .onTapGesture { model.toggle(root) }
+    }
+}
+
+private struct FileBrowserRow: View {
+    let entry: TerminalFileBrowserModel.Entry
+    let depth: Int
+    @ObservedObject var model: TerminalFileBrowserModel
+    let searchText: String
+    let openFile: (URL) -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                if entry.isDirectory {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .rotationEffect(model.isExpanded(entry.url) ? .degrees(90) : .zero)
+                        .frame(width: 10)
+                } else {
+                    Color.clear.frame(width: 10, height: 1)
+                }
+
+                Image(systemName: entry.isDirectory
+                      ? (model.isExpanded(entry.url) ? "folder.fill" : "folder")
+                      : entry.iconName)
+                    .font(.system(size: 12))
+                    .foregroundStyle(entry.isDirectory ? Color.secondary : entry.iconColor)
+                    .frame(width: 16)
+
+                Text(entry.name)
+                    .font(.system(size: 12))
+                    .lineLimit(1)
+                    .foregroundStyle(entry.isHidden ? .secondary : .primary)
+
+                Spacer(minLength: 8)
+            }
+            .padding(.leading, CGFloat(depth) * 16 + 8)
+            .padding(.trailing, 8)
+            .frame(height: 26)
+            .background(rowBackground)
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+            .onTapGesture(perform: activate)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(entry.name)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { activate() }
+            .contextMenu {
+                if !entry.isDirectory {
+                    Button("Open in Vim Split") { openFile(entry.url) }
+                    Button("Open Externally") { NSWorkspace.shared.open(entry.url) }
+                    Divider()
+                }
+                Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([entry.url]) }
+                Divider()
+                Button("Copy Path") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(entry.url.path, forType: .string)
+                }
+            }
+
+            if entry.isDirectory, model.isExpanded(entry.url) {
+                if model.isLoading(entry.url) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.leading, CGFloat(depth + 1) * 16 + 34)
+                        .frame(height: 26)
+                } else {
+                    ForEach(model.filteredChildren(of: entry.url, matching: searchText)) { child in
+                        FileBrowserRow(
+                            entry: child,
+                            depth: depth + 1,
+                            model: model,
+                            searchText: searchText,
+                            openFile: openFile)
+                    }
+                }
+            }
+        }
+    }
+
+    private var rowBackground: Color {
+        if model.isSelected(entry.url) { return Color.primary.opacity(0.16) }
+        if hovering { return Color.primary.opacity(0.07) }
+        return .clear
+    }
+
+    private func activate() {
+        model.select(entry.url)
+        if entry.isDirectory {
+            model.toggle(entry.url)
+        } else {
+            openFile(entry.url)
+        }
+    }
+}
+
+@MainActor
+private final class TerminalFileBrowserModel: ObservableObject {
+    struct Entry: Identifiable, Hashable, Sendable {
+        var id: URL { url }
+
+        let url: URL
+        let name: String
+        let isDirectory: Bool
+        let isHidden: Bool
+
+        var iconName: String {
+            switch url.pathExtension.lowercased() {
+            case "swift": return "swift"
+            case "zig", "json", "yaml", "yml", "toml": return "curlybraces"
+            case "md", "txt": return "doc.text"
+            case "png", "jpg", "jpeg", "gif", "webp", "svg": return "photo"
+            case "js", "ts", "tsx", "jsx": return "j.square"
+            default: return "doc"
+            }
+        }
+
+        var iconColor: Color {
+            switch url.pathExtension.lowercased() {
+            case "swift": return .orange
+            case "js", "jsx": return .yellow
+            case "ts", "tsx": return .blue
+            case "json", "yaml", "yml", "toml": return .yellow
+            default: return .secondary
+            }
+        }
+    }
+
+    @Published private(set) var root: URL?
+    @Published private var children: [URL: [Entry]] = [:]
+    @Published private var expanded: Set<URL> = []
+    @Published private var loading: Set<URL> = []
+    @Published private var selected: URL?
+
+    func setRoot(_ url: URL?) {
+        // Moving focus to sidebar controls or a newly-created terminal split can
+        // temporarily clear the focused PWD. Keep showing the last valid root
+        // instead of flashing an empty state and discarding expansion state.
+        guard let normalized = url?.standardizedFileURL else { return }
+        guard normalized != root else { return }
+        root = normalized
+        children.removeAll()
+        expanded = [normalized]
+        loading.removeAll()
+        selected = nil
+        load(normalized)
+    }
+
+    func reload() {
+        guard let root else { return }
+        let directories = [root] + Array(expanded)
+        children.removeAll()
+        loading.removeAll()
+        directories.forEach(load)
+    }
+
+    func isExpanded(_ url: URL) -> Bool { expanded.contains(url) }
+    func isLoading(_ url: URL) -> Bool { loading.contains(url) }
+    func isSelected(_ url: URL) -> Bool { selected == url }
+    func select(_ url: URL) { selected = url }
+
+    func toggle(_ url: URL) {
+        if expanded.remove(url) == nil {
+            expanded.insert(url)
+            if children[url] == nil { load(url) }
+        }
+    }
+
+    func filteredChildren(of url: URL, matching query: String) -> [Entry] {
+        let entries = children[url] ?? []
+        guard !query.isEmpty else { return entries }
+        return entries.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    private func load(_ url: URL) {
+        guard !loading.contains(url) else { return }
+        loading.insert(url)
+
+        Task {
+            let entries = await Task.detached(priority: .userInitiated) {
+                let keys: Set<URLResourceKey> = [.isDirectoryKey, .isHiddenKey, .nameKey]
+                let urls = (try? FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: Array(keys),
+                    options: [])) ?? []
+
+                return urls.compactMap { child -> Entry? in
+                    guard let values = try? child.resourceValues(forKeys: keys) else { return nil }
+                    return Entry(
+                        url: child,
+                        name: values.name ?? child.lastPathComponent,
+                        isDirectory: values.isDirectory ?? false,
+                        isHidden: values.isHidden ?? false)
+                }
+                .sorted {
+                    if $0.isDirectory != $1.isDirectory { return $0.isDirectory }
+                    return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+                }
+            }.value
+
+            children[url] = entries
+            loading.remove(url)
+        }
+    }
+}
+
+extension TerminalController {
+    /// Opens a file in Vim in a new split to the right of the current split tree.
+    @MainActor
+    func openFileInVimSplit(_ url: URL) {
+        if let editor = fileBrowserEditorSurface,
+           surfaceTree.contains(editor),
+           let socket = fileBrowserEditorSocket {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
+            process.arguments = ["--server", socket, "--remote-tab", url.path]
+            try? process.run()
+            focusSurface(editor)
+            return
+        }
+
+        guard let anchor = surfaceTree.root?.rightmostLeaf() else { return }
+
+        var config = Ghostty.SurfaceConfiguration()
+        let socket = "/tmp/ghostty-file-editor-\(UUID().uuidString).sock"
+        let tablineScript = socket + ".lua"
+        try? Self.neovimTablineScript.write(
+            toFile: tablineScript,
+            atomically: true,
+            encoding: .utf8)
+        config.workingDirectory = url.deletingLastPathComponent().path
+        let tablineCommand = "luafile \(tablineScript)"
+        config.command = "/opt/homebrew/bin/nvim --listen \(socket.shellQuoted) -c \(tablineCommand.shellQuoted) -- \(url.lastPathComponent.shellQuoted)"
+
+        fileBrowserEditorSurface = newSplit(at: anchor, direction: .right, baseConfig: config)
+        fileBrowserEditorSocket = socket
+    }
+
+    private static let neovimTablineScript = #"""
+    vim.o.showtabline = 2
+    vim.o.mouse = "a"
+
+    vim.api.nvim_set_hl(0, "GhosttyEditorIconJS", { fg = "#f7df1e", bold = true })
+    vim.api.nvim_set_hl(0, "GhosttyEditorIconTS", { fg = "#4daafc", bold = true })
+
+    _G.GhosttyEditorCloseTab = function(tab, _, button, _)
+      if button ~= "l" then return end
+      if vim.fn.tabpagenr("$") <= 1 then
+        vim.cmd("quit")
+      else
+        vim.cmd("tabclose " .. tab)
+      end
+    end
+
+    vim.cmd([[
+      function! GhosttyEditorCloseTab(minwid, clicks, button, mods) abort
+        call v:lua.GhosttyEditorCloseTab(a:minwid, a:clicks, a:button, a:mods)
+      endfunction
+    ]])
+
+    _G.GhosttyEditorTabLine = function()
+      local result = ""
+      local current = vim.fn.tabpagenr()
+      local count = vim.fn.tabpagenr("$")
+
+      for tab = 1, count do
+        local buffers = vim.fn.tabpagebuflist(tab)
+        local window = vim.fn.tabpagewinnr(tab)
+        local buffer = buffers[window]
+        local path = vim.fn.bufname(buffer)
+        local name = vim.fn.fnamemodify(path, ":t")
+        if name == "" then name = "Untitled" end
+        name = name:gsub("%%", "%%%%")
+
+        local extension = vim.fn.fnamemodify(path, ":e"):lower()
+        local icon = "▣"
+        local iconHighlight = "TabLine"
+        if extension == "js" or extension == "jsx" then
+          icon = "JS"
+          iconHighlight = "GhosttyEditorIconJS"
+        elseif extension == "ts" or extension == "tsx" then
+          icon = "TS"
+          iconHighlight = "GhosttyEditorIconTS"
+        end
+
+        local modified = vim.bo[buffer].modified and " ●" or ""
+        local tabHighlight = tab == current and "TabLineSel" or "TabLine"
+        result = result
+          .. "%#" .. tabHighlight .. "#%" .. tab .. "T "
+          .. "%#" .. iconHighlight .. "#" .. icon
+          .. "%#" .. tabHighlight .. "# " .. name .. modified .. " "
+          .. "%T%" .. tab .. "@GhosttyEditorCloseTab@ × %X"
+      end
+
+      return result .. "%#TabLineFill#%T"
+    end
+
+    vim.o.tabline = "%!v:lua.GhosttyEditorTabLine()"
+    """#
+}
+
+private extension String {
+    var shellQuoted: String {
+        "'" + replacingOccurrences(of: "'", with: "'\"'\"'") + "'"
+    }
+}

@@ -54,6 +54,9 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
     /// The most recently focused surface, equal to `focusedSurface` when it is non-nil.
     @State private var lastFocusedSurface: Weak<Ghostty.SurfaceView>?
 
+    // File browser visibility is shared across windows and restored between launches.
+    @AppStorage("ghostty.fileBrowserVisible") private var fileBrowserVisible = false
+
     // This seems like a crutch after switching from SwiftUI to AppKit lifecycle.
     @FocusState private var focused: Bool
 
@@ -64,8 +67,9 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
 
     // The pwd of the focused surface as a URL
     private var pwdURL: URL? {
-        guard let surfacePwd, surfacePwd != "" else { return nil }
-        return URL(fileURLWithPath: surfacePwd)
+        let path = surfacePwd ?? lastFocusedSurface?.value?.pwd
+        guard let path, !path.isEmpty else { return nil }
+        return URL(fileURLWithPath: path)
     }
 
     var body: some View {
@@ -78,7 +82,15 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
             HStack(spacing: 0) {
                 if ghostty.config.macosTabStyle == .sidebar,
                    let windowController {
-                    VerticalTabSidebar(windowController: windowController)
+                    VerticalTabSidebar(
+                        windowController: windowController,
+                        fileBrowserVisible: $fileBrowserVisible)
+
+                    if fileBrowserVisible {
+                        TerminalFileBrowser(
+                            rootURL: pwdURL,
+                            openFile: { windowController.openFileInVimSplit($0) })
+                    }
                 }
 
                 ZStack {
