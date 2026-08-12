@@ -398,32 +398,107 @@ extension TerminalController {
     /// Opens a file in Vim in a new split to the right of the current split tree.
     @MainActor
     func openFileInVimSplit(_ url: URL) {
-        if let editor = fileBrowserEditorSurface,
-           surfaceTree.contains(editor),
+        guard let editorExecutable = Self.editorExecutable else {
+            showEditorUnavailable(for: url)
+            return
+        }
+
+        if case let .neovim(neovimURL) = editorExecutable,
+           let editorSurface = fileBrowserEditorSurface,
+           surfaceTree.contains(editorSurface),
            let socket = fileBrowserEditorSocket {
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/nvim")
+            process.executableURL = neovimURL
             process.arguments = ["--server", socket, "--remote-tab", url.path]
-            try? process.run()
-            focusSurface(editor)
+            do {
+                try process.run()
+            } catch {
+                showEditorUnavailable(for: url)
+                return
+            }
+            focusSurface(editorSurface)
             return
         }
 
         guard let anchor = surfaceTree.root?.rightmostLeaf() else { return }
 
         var config = Ghostty.SurfaceConfiguration()
-        let socket = "/tmp/ghostty-file-editor-\(UUID().uuidString).sock"
-        let tablineScript = socket + ".lua"
-        try? Self.neovimTablineScript.write(
-            toFile: tablineScript,
-            atomically: true,
-            encoding: .utf8)
         config.workingDirectory = url.deletingLastPathComponent().path
-        let tablineCommand = "luafile \(tablineScript)"
-        config.command = "/opt/homebrew/bin/nvim --listen \(socket.shellQuoted) -c \(tablineCommand.shellQuoted) -- \(url.lastPathComponent.shellQuoted)"
 
-        fileBrowserEditorSurface = newSplit(at: anchor, direction: .right, baseConfig: config)
-        fileBrowserEditorSocket = socket
+        switch editorExecutable {
+        case let .neovim(neovimURL):
+            let socket = "/tmp/ghostty-file-editor-\(UUID().uuidString).sock"
+            let tablineScript = socket + ".lua"
+            try? Self.neovimTablineScript.write(
+                toFile: tablineScript,
+                atomically: true,
+                encoding: .utf8)
+            let tablineCommand = "luafile \(tablineScript)"
+            config.command = "\(neovimURL.path.shellQuoted) --listen \(socket.shellQuoted) -c \(tablineCommand.shellQuoted) -- \(url.lastPathComponent.shellQuoted)"
+
+            fileBrowserEditorSurface = newSplit(at: anchor, direction: .right, baseConfig: config)
+            fileBrowserEditorSocket = socket
+
+        case let .vim(vimURL):
+            config.command = "\(vimURL.path.shellQuoted) -- \(url.lastPathComponent.shellQuoted)"
+            _ = newSplit(at: anchor, direction: .right, baseConfig: config)
+        }
+    }
+
+    private enum EditorExecutable {
+        case neovim(URL)
+        case vim(URL)
+    }
+
+    private static var editorExecutable: EditorExecutable? {
+        if let url = executableURL(named: "nvim", additionalDirectories: [
+            "/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin",
+        ]) { return .neovim(url) }
+
+        if let url = executableURL(named: "vim", additionalDirectories: [
+            "/usr/bin", "/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin",
+        ]) { return .vim(url) }
+
+        return nil
+    }
+
+    private static func executableURL(named name: String, additionalDirectories: [String]) -> URL? {
+        let environmentDirectories = ProcessInfo.processInfo.environment["PATH"]?
+            .split(separator: ":")
+            .map(String.init) ?? []
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let userDirectories = [
+            "\(home)/.local/bin",
+            "\(home)/.nix-profile/bin",
+            "/run/current-system/sw/bin",
+        ]
+
+        for directory in environmentDirectories + additionalDirectories + userDirectories {
+            let url = URL(fileURLWithPath: directory).appendingPathComponent(name)
+            if FileManager.default.isExecutableFile(atPath: url.path) { return url }
+        }
+        return nil
+    }
+
+    @MainActor
+    private func showEditorUnavailable(for url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "No Terminal Editor Found"
+        alert.informativeText = "Momok could not find Neovim or Vim. Install Neovim with Homebrew (`brew install neovim`), or open this file with its default macOS application."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Open in Default App")
+        alert.addButton(withTitle: "Cancel")
+
+        let completion: (NSApplication.ModalResponse) -> Void = { response in
+            guard response == .alertFirstButtonReturn else { return }
+            NSWorkspace.shared.open(url)
+        }
+
+        if let window {
+            alert.beginSheetModal(for: window, completionHandler: completion)
+        } else {
+            completion(alert.runModal())
+        }
     }
 
     private static let neovimTablineScript = #"""
