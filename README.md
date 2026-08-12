@@ -28,6 +28,32 @@ Core terminal tetap menggunakan Zig, `libghostty`, dan renderer Metal dari
 Ghostty. Fitur workspace macOS dikembangkan secara native dengan AppKit dan
 SwiftUI.
 
+## Tampilan
+
+### Workspace native
+
+Vertical tabs dan project explorer berada langsung di jendela terminal. Root
+project mengikuti working directory terminal aktif.
+
+![Momok workspace dengan vertical tabs dan project explorer](docs/screenshots/project-workspace.png)
+
+### Preview file terintegrasi
+
+File Markdown dan gambar dapat dibuka langsung dari project explorer tanpa
+meninggalkan terminal. Panel preview dapat di-resize, di-refresh, atau ditutup.
+
+![Momok image preview dari project explorer](docs/screenshots/image-preview.png)
+
+Perubahan Momok dibandingkan aplikasi upstream terlihat terutama pada lapisan
+workspace berikut:
+
+| Area | Perubahan di Momok |
+| --- | --- |
+| Navigasi | Vertical tab sidebar dan project explorer terintegrasi |
+| Editing | Reusable Neovim split dengan RPC dan editor tabs |
+| Preview | Renderer Markdown dan image preview native |
+| Tampilan | Branding Momok, ikon Dock, dan true-color CLI |
+
 ## Fitur
 
 - Horizontal tabs bawaan atau vertical tab sidebar yang dapat diubah lebarnya.
