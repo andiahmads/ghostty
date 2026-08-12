@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-REPOSITORY_URL="https://github.com/andiahmads/Momok.git"
-SOURCE_DIR="${MOMOK_SOURCE_DIR:-$HOME/.momok-source}"
+REPOSITORY="andiahmads/Momok"
 APP_PATH="/Applications/Momok.app"
+ARCHIVE_NAME="Momok-macOS-universal.zip"
 
 say() {
   printf '\n%s\n' "$1"
@@ -19,45 +19,18 @@ if [ "$(uname -s)" != "Darwin" ]; then
   fail "Installer ini hanya untuk macOS."
 fi
 
-say "Memeriksa kebutuhan Momok..."
+say "Mengunduh Momok versi terbaru..."
+DOWNLOAD_URL="https://github.com/$REPOSITORY/releases/latest/download/$ARCHIVE_NAME"
+TEMP_DIR="$(mktemp -d /tmp/momok-installer.XXXXXX)"
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
-if ! command -v xcodebuild >/dev/null 2>&1; then
-  fail "Install Xcode dari App Store, buka Xcode satu kali, lalu jalankan installer ini lagi."
+if ! curl -fL --retry 3 --progress-bar "$DOWNLOAD_URL" -o "$TEMP_DIR/$ARCHIVE_NAME"; then
+  fail "Release Momok belum tersedia atau koneksi internet bermasalah. Coba lagi beberapa saat."
 fi
 
-if ! xcodebuild -version >/dev/null 2>&1; then
-  fail "Buka Xcode satu kali dan setujui lisensinya, lalu jalankan installer ini lagi."
-fi
-
-if ! command -v zig >/dev/null 2>&1; then
-  if command -v brew >/dev/null 2>&1; then
-    say "Zig belum tersedia. Meng-install Zig dengan Homebrew..."
-    brew install zig
-  else
-    fail "Zig belum tersedia. Install Homebrew dari https://brew.sh, lalu jalankan installer ini lagi."
-  fi
-fi
-
-if [ -d "$SOURCE_DIR/.git" ]; then
-  say "Memperbarui source Momok..."
-  git -C "$SOURCE_DIR" fetch origin main
-  git -C "$SOURCE_DIR" checkout main
-  git -C "$SOURCE_DIR" pull --ff-only origin main
-else
-  say "Mengunduh Momok..."
-  if [ -e "$SOURCE_DIR" ]; then
-    fail "$SOURCE_DIR sudah ada tetapi bukan repository Momok. Hapus atau pindahkan folder tersebut, lalu coba lagi."
-  fi
-  git clone --depth 1 "$REPOSITORY_URL" "$SOURCE_DIR"
-fi
-
-say "Membuat Momok versi Release. Proses pertama dapat memerlukan beberapa menit..."
-(cd "$SOURCE_DIR" && zig build -Doptimize=ReleaseFast)
-
-BUILT_APP="$SOURCE_DIR/macos/build/ReleaseLocal/Momok.app"
-if [ ! -d "$BUILT_APP" ]; then
-  fail "Build selesai tetapi Momok.app tidak ditemukan."
-fi
+ditto -x -k "$TEMP_DIR/$ARCHIVE_NAME" "$TEMP_DIR/unpacked"
+BUILT_APP="$TEMP_DIR/unpacked/Momok.app"
+[ -d "$BUILT_APP" ] || fail "File download tidak berisi Momok.app yang valid."
 
 say "Memasang Momok ke folder Applications..."
 pkill -f '/Applications/Momok.app/Contents/MacOS/ghostty' 2>/dev/null || true
@@ -68,6 +41,7 @@ if [ -d "$APP_PATH" ]; then
 fi
 
 ditto "$BUILT_APP" "$APP_PATH"
+xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null || true
 touch "$APP_PATH"
 killall Dock 2>/dev/null || true
 open "$APP_PATH"
