@@ -29,7 +29,9 @@ jobs:
           zig version
 
       - name: Build universal Release app
-        run: zig build -Doptimize=ReleaseFast
+        env:
+          MOMOK_VERSION: ${{ startsWith(github.ref, 'refs/tags/momok-v') && github.ref_name || 'momok-dev' }}
+        run: zig build -Doptimize=ReleaseFast -Dversion-string="${MOMOK_VERSION#momok-v}"
 
       - name: Apply ad-hoc signature
         run: codesign --force --deep --sign - macos/build/ReleaseLocal/Momok.app
@@ -62,4 +64,3 @@ jobs:
           files: |
             Momok-macOS-universal.zip
             Momok-macOS-universal.zip.sha256
-
