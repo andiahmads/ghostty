@@ -77,23 +77,22 @@ workspace berikut:
 
 ### Cara termudah
 
-Pastikan **Xcode 26** sudah terpasang dari App Store dan pernah dibuka satu kali.
-Setelah itu buka Terminal, salin perintah berikut, lalu tekan Enter:
+Tidak perlu Xcode, Zig, Homebrew, atau proses build. Buka aplikasi Terminal,
+salin perintah berikut, lalu tekan Enter:
 
 ```shell
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/andiahmads/Momok/main/install.sh)"
 ```
 
-Installer akan mengunduh, membuat Release build, memasang Momok ke Applications,
-dan membukanya secara otomatis. Jika ada kebutuhan yang belum tersedia,
-installer akan menjelaskan apa yang perlu dilakukan. Jalankan perintah yang sama
-lagi kapan saja untuk memperbarui Momok.
+Installer akan mengunduh aplikasi universal terbaru, memasangnya ke Applications,
+dan membuka Momok secara otomatis. Perintah yang sama juga digunakan untuk
+update.
 
 > [!NOTE]
 >
-> Momok belum menyediakan binary macOS bertanda tangan. Karena itu instalasi
-> saat ini melakukan build langsung di Mac pengguna. Source disimpan di
-> `~/.momok-source` agar proses update berikutnya lebih cepat.
+> Binary GitHub Release memakai ad-hoc signature tetapi belum dinotariskan oleh
+> Apple. Installer menghapus atribut quarantine dari aplikasi yang baru
+> diunduh. Distribusi notarized akan memerlukan akun Apple Developer.
 
 ### Instalasi manual untuk developer
 
