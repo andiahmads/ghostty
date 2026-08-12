@@ -1,289 +1,133 @@
-<!-- LOGO -->
-<h1>
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Logo" width="128">
+<h1 align="center">
+  <img src="momok-dock.png" alt="Momok logo" width="128">
   <br>Momok
 </h1>
-  <p align="center">
-    A macOS-focused Ghostty fork with vertical tabs, a project explorer,
-    and an integrated Neovim editor workflow.
-    <br />
-    Built on the fast, native Ghostty terminal and <code>libghostty</code>.
-    <br />
-    <a href="#about">About</a>
-    ·
-    <a href="#install-on-macos">Install</a>
-    ·
-    <a href="https://ghostty.org/docs">Documentation</a>
-    ·
-    <a href="CONTRIBUTING.md">Contributing</a>
-    ·
-    <a href="HACKING.md">Developing</a>
-  </p>
+
+<p align="center">
+  Terminal workspace native untuk macOS dengan vertical tabs, project explorer,
+  preview file, dan workflow Neovim terintegrasi.
 </p>
 
-## Momok
+> [!IMPORTANT]
+>
+> Momok adalah proyek eksperimen dan fork independen dari
+> [Ghostty](https://github.com/ghostty-org/ghostty). Momok terinspirasi oleh
+> workflow modern [Warp Terminal](https://www.warp.dev/), tetapi dibangun di
+> atas core native Ghostty untuk mempertahankan rendering Metal, startup yang
+> cepat, dan performa terminal yang ringan. Momok tidak berafiliasi dengan atau
+> didukung secara resmi oleh Ghostty maupun Warp.
 
-Momok is a personal project fork of
-[Ghostty](https://github.com/ghostty-org/ghostty). It keeps Ghostty's native
-terminal core while adding a macOS workspace experience inspired by modern
-terminal applications.
+## Tentang Momok
 
-Features added by Momok include:
+Momok menggabungkan terminal native berperforma tinggi dengan workspace yang
+lebih praktis untuk coding. Fokus eksperimen ini adalah menghadirkan pengalaman
+kerja modern seperti navigasi project dan preview terintegrasi tanpa mengganti
+terminal dengan UI berbasis web atau runtime yang lebih berat.
 
-- Configurable native horizontal tabs or a resizable vertical tab sidebar.
-- A resizable project file explorer that follows the focused terminal's
-  working directory.
-- Lazy directory loading, file filtering, refresh, Finder reveal, and path
-  copying from the explorer.
-- A single right-side Neovim editor split that is reused when opening files.
-- Neovim RPC integration so additional files open as editor tabs instead of
-  creating more terminal splits.
-- A persistent editor tabline with file-type labels, modified-buffer
-  indicators, tab switching, and clickable close buttons.
-- Native Markdown previews from the project explorer, including headings,
-  lists, quotes, code blocks, tables, and inline formatting.
-- Native image previews for image formats supported by macOS, with a resizable
-  preview panel and refresh control.
-- Momok application branding, bundle identifiers, menus, and Dock icon on
-  macOS, including consistent icons in development builds.
+Core terminal tetap menggunakan Zig, `libghostty`, dan renderer Metal dari
+Ghostty. Fitur workspace macOS dikembangkan secara native dengan AppKit dan
+SwiftUI.
 
-## Install on macOS
+## Fitur
 
-Momok currently installs from source. Building the macOS application requires
-macOS, Xcode 26 with the macOS 26 SDK, and Zig 0.16.0 or newer.
+- Horizontal tabs bawaan atau vertical tab sidebar yang dapat diubah lebarnya.
+- Project explorer yang mengikuti working directory terminal aktif.
+- Lazy directory loading, pencarian file, refresh, Reveal in Finder, dan Copy
+  Path.
+- Satu Neovim split di sisi kanan yang digunakan kembali saat membuka file.
+- Integrasi Neovim RPC untuk membuka file berikutnya sebagai editor tab.
+- Editor tabline dengan label tipe file, indikator perubahan, perpindahan tab,
+  dan tombol tutup.
+- Preview Markdown native dengan heading, list, quote, code block, table, dan
+  inline formatting.
+- Preview gambar native untuk format yang didukung macOS, termasuk PNG, JPEG,
+  GIF, TIFF, HEIC, BMP, dan WebP yang tersedia pada versi macOS pengguna.
+- Panel preview yang dapat di-resize, di-refresh, dan ditutup.
+- Dukungan true color untuk aplikasi terminal seperti Codex.
+- Branding, bundle identifier, menu, nama aplikasi, dan ikon Dock Momok.
+
+## Instalasi di macOS
+
+### Persyaratan
+
+- macOS
+- Xcode 26 dengan macOS 26 SDK
+- Zig 0.16.0 atau lebih baru
+- Git
+
+### Build dan install
+
+Clone repository lalu buat build Release agar Momok berjalan tanpa banner dan
+overhead Debug:
 
 ```shell
 git clone https://github.com/andiahmads/Momok.git
 cd Momok
-zig build
+zig build -Doptimize=ReleaseFast
 ```
 
-The application bundle is created at `macos/build/Debug/Momok.app`. Install and
-open it with:
+Bundle aplikasi akan dibuat di `macos/build/ReleaseLocal/Momok.app`. Tutup
+Momok versi lama, lalu install ke folder Applications:
 
 ```shell
-ditto macos/build/Debug/Momok.app /Applications/Momok.app
+pkill -f '/Applications/Momok.app/Contents/MacOS/ghostty' 2>/dev/null || true
+ditto macos/build/ReleaseLocal/Momok.app /Applications/Momok.app
 open /Applications/Momok.app
 ```
 
-Before replacing an existing installation, quit Momok. To update later, pull
-the latest source and repeat the build and `ditto` commands:
+Jika ikon Dock belum berubah setelah update, jalankan:
 
 ```shell
+killall Dock
+open /Applications/Momok.app
+```
+
+### Update
+
+```shell
+cd Momok
 git pull
+zig build -Doptimize=ReleaseFast
+pkill -f '/Applications/Momok.app/Contents/MacOS/ghostty' 2>/dev/null || true
+ditto macos/build/ReleaseLocal/Momok.app /Applications/Momok.app
+open /Applications/Momok.app
+```
+
+## Konfigurasi
+
+Momok masih kompatibel dengan konfigurasi core Ghostty. Konfigurasi terminal
+yang sudah ada di `~/.config/ghostty/config` tetap dapat digunakan, termasuk
+font, theme, key binding, shell integration, dan pengaturan terminal lainnya.
+
+Untuk menjaga warna aplikasi CLI seperti Codex, jangan menetapkan environment
+variable `NO_COLOR=1`. Momok menyediakan `TERM=xterm-256color` dan
+`COLORTERM=truecolor` kepada proses terminal.
+
+## Pengembangan
+
+Build aplikasi untuk pengembangan:
+
+```shell
 zig build
-ditto macos/build/Debug/Momok.app /Applications/Momok.app
+open macos/build/Debug/Momok.app
 ```
 
-Momok inherits Ghostty's configuration. Existing Ghostty users can continue
-using their terminal configuration while gaining Momok's workspace and preview
-features.
+Build Debug menampilkan peringatan performa dan hanya ditujukan untuk proses
+development. Gunakan build `ReleaseFast` untuk pemakaian harian.
 
-Momok is independently maintained and is not an official Ghostty release.
-The original Ghostty documentation is retained below for upstream behavior,
-building instructions, and project history.
+Panduan teknis core dan kontribusi upstream yang masih relevan tersedia di
+[HACKING.md](HACKING.md) dan [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## About
+## Kredit dan status
 
-Ghostty is a terminal emulator that differentiates itself by being
-fast, feature-rich, and native. While there are many excellent terminal
-emulators available, they all force you to choose between speed,
-features, or native UIs. Ghostty provides all three.
+Momok memanfaatkan karya open-source Ghostty sebagai fondasi terminalnya dan
+mempertahankan lisensi serta atribusi upstream yang berlaku. Ide workspace
+modernnya terinspirasi oleh Warp Terminal, kemudian diimplementasikan sebagai
+fitur macOS native di atas core Ghostty.
 
-**`libghostty`** is a cross-platform, zero-dependency C and Zig library
-for building terminal emulators or utilizing terminal functionality
-(such as style parsing). Anyone can use `libghostty` to build a terminal
-emulator or embed a terminal into their own applications. See
-[Ghostling](https://github.com/ghostty-org/ghostling) for a minimal complete project
-example or the [`examples` directory](https://github.com/ghostty-org/ghostty/tree/main/example)
-for smaller examples of using `libghostty` in C and Zig.
+Proyek ini bersifat eksperimental. API, UI, struktur konfigurasi Momok, dan
+fitur workspace dapat berubah selama pengembangan.
 
-For more details, see [About Ghostty](https://ghostty.org/docs/about).
+## Lisensi
 
-## Download
-
-See the [download page](https://ghostty.org/download) on the Ghostty website.
-
-## Documentation
-
-See the [documentation](https://ghostty.org/docs) on the Ghostty website.
-
-## Contributing and Developing
-
-If you have any ideas, issues, etc. regarding Ghostty, or would like to
-contribute to Ghostty through pull requests, please check out our
-["Contributing to Ghostty"](CONTRIBUTING.md) document. Those who would like
-to get involved with Ghostty's development as well should also read the
-["Developing Ghostty"](HACKING.md) document for more technical details.
-
-## Roadmap and Status
-
-Ghostty is stable and in use by millions of people and machines daily.
-
-The high-level ambitious plan for the project, in order:
-
-|  #  | Step                                                    | Status |
-| :-: | ------------------------------------------------------- | :----: |
-|  1  | Standards-compliant terminal emulation                  |   ✅   |
-|  2  | Competitive performance                                 |   ✅   |
-|  3  | Rich windowing features -- multi-window, tabbing, panes |   ✅   |
-|  4  | Native Platform Experiences                             |   ✅   |
-|  5  | Cross-platform `libghostty` for Embeddable Terminals    |   ✅   |
-|  6  | Ghostty-only Terminal Control Sequences                 |   ❌   |
-
-Additional details for each step in the big roadmap below:
-
-#### Standards-Compliant Terminal Emulation
-
-Ghostty implements all of the regularly used control sequences and
-can run every mainstream terminal program without issue. For legacy sequences,
-we've done a [comprehensive xterm audit](https://github.com/ghostty-org/ghostty/issues/632)
-comparing Ghostty's behavior to xterm and building a set of conformance
-test cases.
-
-In addition to legacy sequences (what you'd call real "terminal" emulation),
-Ghostty also supports more modern sequences than almost any other terminal
-emulator. These features include things like the Kitty graphics protocol,
-Kitty image protocol, clipboard sequences, synchronized rendering,
-light/dark mode notifications, and many, many more.
-
-We believe Ghostty is one of the most compliant and feature-rich terminal
-emulators available.
-
-Terminal behavior is partially a de jure standard
-(i.e. [ECMA-48](https://ecma-international.org/publications-and-standards/standards/ecma-48/))
-but mostly a de facto standard as defined by popular terminal emulators
-worldwide. Ghostty takes the approach that our behavior is defined by
-(1) standards, if available, (2) xterm, if the feature exists, (3)
-other popular terminals, in that order. This defines what the Ghostty project
-views as a "standard."
-
-#### Competitive Performance
-
-Ghostty is generally in the same performance category as the other highest
-performing terminal emulators.
-
-"The same performance category" means that Ghostty is much faster than
-traditional or "slow" terminals and is within an unnoticeable margin of the
-well-known "fast" terminals. For example, Ghostty and Alacritty are usually within
-a few percentage points of each other on various benchmarks, but are both
-something like 100x faster than Terminal.app and iTerm. However, Ghostty
-is much more feature rich than Alacritty and has a much more native app
-experience.
-
-This performance is achieved through high-level architectural decisions and
-low-level optimizations. At a high-level, Ghostty has a multi-threaded
-architecture with a dedicated read thread, write thread, and render thread
-per terminal. Our renderer uses OpenGL on Linux and Metal on macOS.
-Our read thread has a heavily optimized terminal parser that leverages
-CPU-specific SIMD instructions. Etc.
-
-#### Rich Windowing Features
-
-The Mac and Linux (build with GTK) apps support multi-window, tabbing, and
-splits with additional features such as tab renaming, coloring, etc. These
-features allow for a higher degree of organization and customization than
-single-window terminals.
-
-#### Native Platform Experiences
-
-Ghostty is a cross-platform terminal emulator but we don't aim for a
-least-common-denominator experience. There is a large, shared core written
-in Zig but we do a lot of platform-native things:
-
-- The macOS app is a true SwiftUI-based application with all the things you
-  would expect such as real windowing, menu bars, a settings GUI, etc.
-- macOS uses a true Metal renderer with CoreText for font discovery.
-- macOS supports AppleScript, Apple Shortcuts (AppIntents), etc.
-- The Linux app is built with GTK.
-- The Linux app integrates deeply with systemd if available for things
-  like always-on, new windows in a single instance, cgroup isolation, etc.
-
-Our goal with Ghostty is for users of whatever platform they run Ghostty
-on to think that Ghostty was built for their platform first and maybe even
-exclusively. We want Ghostty to feel like a native app on every platform,
-for the best definition of "native" on each platform.
-
-#### Cross-platform `libghostty` for Embeddable Terminals
-
-In addition to being a standalone terminal emulator, Ghostty is a
-C-compatible library for embedding a fast, feature-rich terminal emulator
-in any 3rd party project. This library is called `libghostty`.
-
-Due to the scope of this project, we're breaking libghostty down into
-separate libraries, starting with `libghostty-vt`. The goal of
-this project is to focus on parsing terminal sequences and maintaining
-terminal state. This is covered in more detail in this
-[blog post](https://mitchellh.com/writing/libghostty-is-coming).
-
-`libghostty-vt` is already available and usable today for Zig and C and
-is compatible for macOS, Linux, Windows, and WebAssembly. The functionality
-is extremely stable (since its been proven in Ghostty GUI for a long time),
-but the API signatures are still in flux.
-
-`libghostty` is already heavily in use. See [`examples`](https://github.com/ghostty-org/ghostty/tree/main/example)
-for small examples of using `libghostty` in C and Zig or the
-[Ghostling](https://github.com/ghostty-org/ghostling) project for a
-complete example. See [awesome-libghostty](https://github.com/Uzaaft/awesome-libghostty)
-for a list of projects and resources related to `libghostty`.
-
-We haven't tagged libghostty with a version yet and we're still working
-on a better docs experience, but our [Doxygen website](https://libghostty.tip.ghostty.org/)
-is a good resource for the C API.
-
-#### Ghostty-only Terminal Control Sequences
-
-We want and believe that terminal applications can and should be able
-to do so much more. We've worked hard to support a wide variety of modern
-sequences created by other terminal emulators towards this end, but we also
-want to fill the gaps by creating our own sequences.
-
-We've been hesitant to do this up until now because we don't want to create
-more fragmentation in the terminal ecosystem by creating sequences that only
-work in Ghostty. But, we do want to balance that with the desire to push the
-terminal forward with stagnant standards and the slow pace of change in the
-terminal ecosystem.
-
-We haven't done any of this yet.
-
-## Crash Reports
-
-Ghostty has a built-in crash reporter that will generate and save crash
-reports to disk. The crash reports are saved to the `$XDG_STATE_HOME/ghostty/crash`
-directory. If `$XDG_STATE_HOME` is not set, the default is `~/.local/state`.
-**Crash reports are _not_ automatically sent anywhere off your machine.**
-
-Crash reports are only generated the next time Ghostty is started after a
-crash. If Ghostty crashes and you want to generate a crash report, you must
-restart Ghostty at least once. You should see a message in the log that a
-crash report was generated.
-
-> [!NOTE]
->
-> Use the `ghostty +crash-report` CLI command to get a list of available crash
-> reports. A future version of Ghostty will make the contents of the crash
-> reports more easily viewable through the CLI and GUI.
-
-Crash reports end in the `.ghosttycrash` extension. The crash reports are in
-[Sentry envelope format](https://develop.sentry.dev/sdk/envelopes/). You can
-upload these to your own Sentry account to view their contents, but the format
-is also publicly documented so any other available tools can also be used.
-The `ghostty +crash-report` CLI command can be used to list any crash reports.
-A future version of Ghostty will show you the contents of the crash report
-directly in the terminal.
-
-To send the crash report to the Ghostty project, you can use the following
-CLI command using the [Sentry CLI](https://docs.sentry.io/cli/installation/):
-
-```shell-session
-SENTRY_DSN=https://e914ee84fd895c4fe324afa3e53dac76@o4507352570920960.ingest.us.sentry.io/4507850923638784 sentry-cli send-envelope --raw <path to ghostty crash>
-```
-
-> [!WARNING]
->
-> The crash report can contain sensitive information. The report doesn't
-> purposely contain sensitive information, but it does contain the full
-> stack memory of each thread at the time of the crash. This information
-> is used to rebuild the stack trace but can also contain sensitive data
-> depending on when the crash occurred.
+Lihat [LICENSE](LICENSE) untuk ketentuan lisensi proyek dan komponen upstream.
