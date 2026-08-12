@@ -75,17 +75,30 @@ workspace berikut:
 
 ## Instalasi di macOS
 
-### Persyaratan
+### Cara termudah
 
-- macOS
-- Xcode 26 dengan macOS 26 SDK
-- Zig 0.16.0 atau lebih baru
-- Git
+Pastikan **Xcode 26** sudah terpasang dari App Store dan pernah dibuka satu kali.
+Setelah itu buka Terminal, salin perintah berikut, lalu tekan Enter:
 
-### Build dan install
+```shell
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/andiahmads/Momok/main/install.sh)"
+```
 
-Clone repository lalu buat build Release agar Momok berjalan tanpa banner dan
-overhead Debug:
+Installer akan mengunduh, membuat Release build, memasang Momok ke Applications,
+dan membukanya secara otomatis. Jika ada kebutuhan yang belum tersedia,
+installer akan menjelaskan apa yang perlu dilakukan. Jalankan perintah yang sama
+lagi kapan saja untuk memperbarui Momok.
+
+> [!NOTE]
+>
+> Momok belum menyediakan binary macOS bertanda tangan. Karena itu instalasi
+> saat ini melakukan build langsung di Mac pengguna. Source disimpan di
+> `~/.momok-source` agar proses update berikutnya lebih cepat.
+
+### Instalasi manual untuk developer
+
+Persyaratan: macOS, Xcode 26 dengan macOS 26 SDK, Zig 0.16.0 atau lebih baru,
+dan Git. Neovim bersifat opsional.
 
 ```shell
 git clone https://github.com/andiahmads/Momok.git
@@ -109,7 +122,7 @@ killall Dock
 open /Applications/Momok.app
 ```
 
-### Update
+### Update manual
 
 ```shell
 cd Momok
@@ -131,6 +144,17 @@ menyukai tab horizontal dapat memilihnya secara eksplisit:
 
 ```ini
 macos-tab-style = native
+```
+
+Jika Neovim tidak tersedia, Momok menggunakan Vim bawaan macOS sebagai editor
+split sederhana. Integrasi RPC, custom tabline, dan reusable editor tabs hanya
+tersedia dengan Neovim. Jika Neovim maupun Vim tidak ditemukan, Momok
+menampilkan dialog untuk membuka file memakai aplikasi default macOS.
+
+Untuk mengaktifkan editor split dengan seluruh fitur, install Neovim dengan:
+
+```shell
+brew install neovim
 ```
 
 Untuk menjaga warna aplikasi CLI seperti Codex, jangan menetapkan environment
