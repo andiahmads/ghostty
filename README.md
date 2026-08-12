@@ -12,7 +12,7 @@
     <br />
     <a href="#about">About</a>
     ·
-    <a href="https://ghostty.org/download">Download</a>
+    <a href="#install-on-macos">Install</a>
     ·
     <a href="https://ghostty.org/docs">Documentation</a>
     ·
@@ -41,6 +41,44 @@ Features added by Momok include:
   creating more terminal splits.
 - A persistent editor tabline with file-type labels, modified-buffer
   indicators, tab switching, and clickable close buttons.
+- Native Markdown previews from the project explorer, including headings,
+  lists, quotes, code blocks, tables, and inline formatting.
+- Native image previews for image formats supported by macOS, with a resizable
+  preview panel and refresh control.
+- Momok application branding, bundle identifiers, menus, and Dock icon on
+  macOS, including consistent icons in development builds.
+
+## Install on macOS
+
+Momok currently installs from source. Building the macOS application requires
+macOS, Xcode 26 with the macOS 26 SDK, and Zig 0.16.0 or newer.
+
+```shell
+git clone https://github.com/andiahmads/Momok.git
+cd Momok
+zig build
+```
+
+The application bundle is created at `macos/build/Debug/Momok.app`. Install and
+open it with:
+
+```shell
+ditto macos/build/Debug/Momok.app /Applications/Momok.app
+open /Applications/Momok.app
+```
+
+Before replacing an existing installation, quit Momok. To update later, pull
+the latest source and repeat the build and `ditto` commands:
+
+```shell
+git pull
+zig build
+ditto macos/build/Debug/Momok.app /Applications/Momok.app
+```
+
+Momok inherits Ghostty's configuration. Existing Ghostty users can continue
+using their terminal configuration while gaining Momok's workspace and preview
+features.
 
 Momok is independently maintained and is not an official Ghostty release.
 The original Ghostty documentation is retained below for upstream behavior,

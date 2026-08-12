@@ -86,7 +86,7 @@
 		A586167B2B7703CC009BDB1D /* fish */ = {isa = PBXFileReference; lastKnownFileType = folder; name = fish; path = "../zig-out/share/fish"; sourceTree = "<group>"; };
 		A5985CE52C33060F00C57AD3 /* man */ = {isa = PBXFileReference; lastKnownFileType = folder; name = man; path = "../zig-out/share/man"; sourceTree = "<group>"; };
 		A5A1F8842A489D6800D1E8BC /* terminfo */ = {isa = PBXFileReference; lastKnownFileType = folder; name = terminfo; path = "../zig-out/share/terminfo"; sourceTree = "<group>"; };
-		A5B30531299BEAAA0047F10C /* Ghostty.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ghostty.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A5B30531299BEAAA0047F10C /* Momok.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Momok.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5B30538299BEAAB0047F10C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A5B3053D299BEAAB0047F10C /* Ghostty.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Ghostty.entitlements; sourceTree = "<group>"; };
 		A5D4499D2B53AE7B000F5B83 /* Ghostty-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ghostty-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -202,6 +202,7 @@
 				"Features/Terminal/Window Styles/TransparentTitlebarTerminalWindow.swift",
 				"Features/Terminal/Window Styles/VerticalTabSidebar.swift",
 				"Features/Terminal/Window Styles/TerminalFileBrowser.swift",
+				"Features/Terminal/Window Styles/TerminalMarkdownPreview.swift",
 				Features/Update/UpdateBadge.swift,
 				Features/Update/UpdateController.swift,
 				Features/Update/UpdateDelegate.swift,
@@ -359,7 +360,7 @@
 		A5B30532299BEAAA0047F10C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A5B30531299BEAAA0047F10C /* Ghostty.app */,
+				A5B30531299BEAAA0047F10C /* Momok.app */,
 				A5D4499D2B53AE7B000F5B83 /* Ghostty-iOS.app */,
 				A54F45F32E1F047A0046BD5C /* GhosttyTests.xctest */,
 				810ACC9F2E9D3301004F8F92 /* GhosttyUITests.xctest */,
@@ -468,7 +469,7 @@
 				A51BFC262B30F1B800E92F16 /* Sparkle */,
 			);
 			productName = Ghostty;
-			productReference = A5B30531299BEAAA0047F10C /* Ghostty.app */;
+			productReference = A5B30531299BEAAA0047F10C /* Momok.app */;
 			productType = "com.apple.product-type.application";
 		};
 		A5D4499C2B53AE7B000F5B83 /* Ghostty-iOS */ = {
@@ -755,7 +756,8 @@
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Ghostty-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Ghostty;
+				INFOPLIST_KEY_CFBundleDisplayName = Momok;
+				INFOPLIST_KEY_CFBundleName = Momok;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "A program running within Ghostty would like to use AppleScript.";
 				INFOPLIST_KEY_NSAudioCaptureUsageDescription = "A program running within Ghostty would like to access your system's audio.";
@@ -782,8 +784,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.1;
 				"OTHER_LDFLAGS[arch=*]" = "-lstdc++";
-				PRODUCT_BUNDLE_IDENTIFIER = com.mitchellh.ghostty;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.andiahmads.momok;
+				PRODUCT_NAME = Momok;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Sources/App/macOS/ghostty-bridging-header.h";
 				SWIFT_VERSION = 5.0;
@@ -1153,7 +1155,8 @@
 				EXECUTABLE_NAME = ghostty;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Ghostty-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Ghostty[DEBUG]";
+				INFOPLIST_KEY_CFBundleDisplayName = "Momok[DEBUG]";
+				INFOPLIST_KEY_CFBundleName = Momok;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "A program running within Ghostty would like to use AppleScript.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "A program running within Ghostty would like to use Bluetooth.";
@@ -1179,8 +1182,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.1;
 				"OTHER_LDFLAGS[arch=*]" = "-lstdc++";
-				PRODUCT_BUNDLE_IDENTIFIER = com.mitchellh.ghostty.debug;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.andiahmads.momok.debug;
+				PRODUCT_NAME = Momok;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Sources/App/macOS/ghostty-bridging-header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -1208,7 +1211,8 @@
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Ghostty-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Ghostty;
+				INFOPLIST_KEY_CFBundleDisplayName = Momok;
+				INFOPLIST_KEY_CFBundleName = Momok;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "A program running within Ghostty would like to use AppleScript.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "A program running within Ghostty would like to use Bluetooth.";
@@ -1234,8 +1238,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 0.1;
 				"OTHER_LDFLAGS[arch=*]" = "-lstdc++";
-				PRODUCT_BUNDLE_IDENTIFIER = com.mitchellh.ghostty;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.andiahmads.momok;
+				PRODUCT_NAME = Momok;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Sources/App/macOS/ghostty-bridging-header.h";
 				SWIFT_VERSION = 5.0;

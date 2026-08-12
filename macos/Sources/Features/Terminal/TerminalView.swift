@@ -1,6 +1,7 @@
 import SwiftUI
 import GhosttyKit
 import os
+import UniformTypeIdentifiers
 
 /// This delegate is notified of actions and property changes regarding the terminal view. This
 /// delegate is optional and can be used by a TerminalView caller to react to changes such as
@@ -56,6 +57,7 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
 
     // File browser visibility is shared across windows and restored between launches.
     @AppStorage("ghostty.fileBrowserVisible") private var fileBrowserVisible = false
+    @State private var previewURL: URL?
 
     // This seems like a crutch after switching from SwiftUI to AppKit lifecycle.
     @FocusState private var focused: Bool
@@ -89,7 +91,22 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
                     if fileBrowserVisible {
                         TerminalFileBrowser(
                             rootURL: pwdURL,
-                            openFile: { windowController.openFileInVimSplit($0) })
+                            openFile: { url in
+                                if url.pathExtension.lowercased() == "md"
+                                    || UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) == true
+                                {
+                                    previewURL = url
+                                } else {
+                                    previewURL = nil
+                                    windowController.openFileInVimSplit(url)
+                                }
+                            })
+                    }
+
+                    if let previewURL {
+                        TerminalFilePreview(
+                            url: previewURL,
+                            onClose: { self.previewURL = nil })
                     }
                 }
 
