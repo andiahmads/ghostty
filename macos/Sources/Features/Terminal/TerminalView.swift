@@ -56,7 +56,7 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
     @State private var lastFocusedSurface: Weak<Ghostty.SurfaceView>?
 
     // File browser visibility is shared across windows and restored between launches.
-    @AppStorage("ghostty.fileBrowserVisible") private var fileBrowserVisible = false
+    @AppStorage("ghostty.fileBrowserVisible") private var fileBrowserVisible = true
     @State private var previewURL: URL?
 
     // This seems like a crutch after switching from SwiftUI to AppKit lifecycle.

@@ -3356,16 +3356,16 @@ keybind: Keybinds = .{},
 ///
 /// Valid values are:
 ///
-///   * `native` - Use the native horizontal macOS tab bar. This is the default.
+///   * `native` - Use the native horizontal macOS tab bar.
 ///   * `sidebar` - Replace the native tab bar with a vertical sidebar on the
-///     left side of the terminal window.
+///     left side of the terminal window. This is the default.
 ///
 /// The sidebar uses the same native tab group and tab lifecycle as the native
 /// tab bar, so existing tab keybindings, restoration, splits, and undo continue
 /// to work.
 ///
 /// Changing this option at runtime only applies to new windows.
-@"macos-tab-style": MacTabStyle = .native,
+@"macos-tab-style": MacTabStyle = .sidebar,
 
 /// Whether the proxy icon in the macOS titlebar is visible. The proxy icon
 /// is the icon that represents the folder of the current working directory.
