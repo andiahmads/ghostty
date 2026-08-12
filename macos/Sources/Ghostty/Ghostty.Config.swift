@@ -379,7 +379,7 @@ extension Ghostty {
         }
 
         var macosTabStyle: MacOSTabStyle {
-            let defaultValue = MacOSTabStyle.native
+            let defaultValue = MacOSTabStyle.sidebar
             guard let config = self.config else { return defaultValue }
             var v: UnsafePointer<Int8>?
             let key = "macos-tab-style"

@@ -57,7 +57,8 @@ workspace berikut:
 ## Fitur
 
 - Horizontal tabs bawaan atau vertical tab sidebar yang dapat diubah lebarnya.
-- Project explorer yang mengikuti working directory terminal aktif.
+- Vertical sidebar dan project explorer langsung aktif pada instalasi baru.
+- Project explorer mengikuti working directory terminal aktif.
 - Lazy directory loading, pencarian file, refresh, Reveal in Finder, dan Copy
   Path.
 - Satu Neovim split di sisi kanan yang digunakan kembali saat membuka file.
@@ -124,6 +125,13 @@ open /Applications/Momok.app
 Momok masih kompatibel dengan konfigurasi core Ghostty. Konfigurasi terminal
 yang sudah ada di `~/.config/ghostty/config` tetap dapat digunakan, termasuk
 font, theme, key binding, shell integration, dan pengaturan terminal lainnya.
+
+Vertical sidebar dan project explorer aktif secara default. Pengguna yang lebih
+menyukai tab horizontal dapat memilihnya secara eksplisit:
+
+```ini
+macos-tab-style = native
+```
 
 Untuk menjaga warna aplikasi CLI seperti Codex, jangan menetapkan environment
 variable `NO_COLOR=1`. Momok menyediakan `TERM=xterm-256color` dan
