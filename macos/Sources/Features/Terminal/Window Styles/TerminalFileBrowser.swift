@@ -185,6 +185,9 @@ private struct FileBrowserRootRow: View {
         .background(Color.primary.opacity(0.07))
         .contentShape(Rectangle())
         .onTapGesture { model.toggle(root) }
+        .contextMenu {
+            FileBrowserContextMenu(target: root, isDirectory: true, model: model)
+        }
     }
 }
 
@@ -240,6 +243,11 @@ private struct FileBrowserRow: View {
                     Button("Open Externally") { NSWorkspace.shared.open(entry.url) }
                     Divider()
                 }
+                FileBrowserContextMenu(
+                    target: entry.url,
+                    isDirectory: entry.isDirectory,
+                    model: model)
+                Divider()
                 Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([entry.url]) }
                 Divider()
                 Button("Copy Path") {
@@ -281,6 +289,25 @@ private struct FileBrowserRow: View {
         } else {
             openFile(entry.url)
         }
+    }
+}
+
+private struct FileBrowserContextMenu: View {
+    let target: URL
+    let isDirectory: Bool
+    @ObservedObject var model: TerminalFileBrowserModel
+
+    private var destination: URL {
+        isDirectory ? target : target.deletingLastPathComponent()
+    }
+
+    var body: some View {
+        Button("New File…") { model.createItem(in: destination, directory: false) }
+        Button("New Folder…") { model.createItem(in: destination, directory: true) }
+        Divider()
+        Button("Copy") { model.copy(target) }
+        Button("Paste") { model.paste(into: destination) }
+            .disabled(!model.canPaste)
     }
 }
 
@@ -341,13 +368,87 @@ private final class TerminalFileBrowserModel: ObservableObject {
         let directories = [root] + Array(expanded)
         children.removeAll()
         loading.removeAll()
-        directories.forEach(load)
+        directories.forEach { load($0) }
     }
 
     func isExpanded(_ url: URL) -> Bool { expanded.contains(url) }
     func isLoading(_ url: URL) -> Bool { loading.contains(url) }
     func isSelected(_ url: URL) -> Bool { selected == url }
     func select(_ url: URL) { selected = url }
+
+    var canPaste: Bool {
+        NSPasteboard.general.canReadObject(forClasses: [NSURL.self], options: [
+            .urlReadingFileURLsOnly: true,
+        ])
+    }
+
+    func createItem(in directory: URL, directory isDirectory: Bool) {
+        let alert = NSAlert()
+        alert.messageText = isDirectory ? "New Folder" : "New File"
+        alert.informativeText = "Enter a name for the new \(isDirectory ? "folder" : "file")."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Create")
+        alert.addButton(withTitle: "Cancel")
+
+        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        input.placeholderString = isDirectory ? "Folder name" : "File name"
+        alert.accessoryView = input
+        alert.window.initialFirstResponder = input
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let name = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isValidItemName(name) else {
+            showError("Invalid Name", detail: "Names cannot be empty, '.', '..', or contain '/'.")
+            return
+        }
+
+        let url = directory.appendingPathComponent(name, isDirectory: isDirectory)
+        guard !FileManager.default.fileExists(atPath: url.path) else {
+            showError("Item Already Exists", detail: "An item named “\(name)” already exists in this folder.")
+            return
+        }
+
+        do {
+            if isDirectory {
+                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
+            } else {
+                guard FileManager.default.createFile(atPath: url.path, contents: Data()) else {
+                    throw CocoaError(.fileWriteUnknown)
+                }
+            }
+            expanded.insert(directory)
+            load(directory, force: true)
+            selected = url
+        } catch {
+            showError("Could Not Create Item", detail: error.localizedDescription)
+        }
+    }
+
+    func copy(_ url: URL) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects([url as NSURL])
+    }
+
+    func paste(into directory: URL) {
+        guard let urls = NSPasteboard.general.readObjects(
+            forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]) as? [URL],
+            !urls.isEmpty
+        else { return }
+
+        do {
+            for source in urls {
+                let destination = availableDestination(for: source, in: directory)
+                try FileManager.default.copyItem(at: source, to: destination)
+                selected = destination
+            }
+            expanded.insert(directory)
+            load(directory, force: true)
+        } catch {
+            showError("Could Not Paste Item", detail: error.localizedDescription)
+        }
+    }
 
     func toggle(_ url: URL) {
         if expanded.remove(url) == nil {
@@ -362,7 +463,11 @@ private final class TerminalFileBrowserModel: ObservableObject {
         return entries.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
-    private func load(_ url: URL) {
+    private func load(_ url: URL, force: Bool = false) {
+        if force {
+            children[url] = nil
+            loading.remove(url)
+        }
         guard !loading.contains(url) else { return }
         loading.insert(url)
 
@@ -391,6 +496,38 @@ private final class TerminalFileBrowserModel: ObservableObject {
             children[url] = entries
             loading.remove(url)
         }
+    }
+
+    private func isValidItemName(_ name: String) -> Bool {
+        !name.isEmpty && name != "." && name != ".." && !name.contains("/")
+    }
+
+    private func availableDestination(for source: URL, in directory: URL) -> URL {
+        let fileManager = FileManager.default
+        var destination = directory.appendingPathComponent(source.lastPathComponent)
+        guard fileManager.fileExists(atPath: destination.path) else { return destination }
+
+        let extensionName = source.pathExtension
+        let baseName = source.deletingPathExtension().lastPathComponent
+        var copyNumber = 1
+        repeat {
+            let suffix = copyNumber == 1 ? " copy" : " copy \(copyNumber)"
+            let name = extensionName.isEmpty
+                ? baseName + suffix
+                : baseName + suffix + "." + extensionName
+            destination = directory.appendingPathComponent(name)
+            copyNumber += 1
+        } while fileManager.fileExists(atPath: destination.path)
+        return destination
+    }
+
+    private func showError(_ title: String, detail: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = detail
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }
 
