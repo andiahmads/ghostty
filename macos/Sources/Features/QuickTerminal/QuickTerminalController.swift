@@ -30,6 +30,11 @@ class QuickTerminalController: BaseTerminalController {
     /// The configuration derived from the Ghostty config so we don't need to rely on references.
     private var derivedConfig: DerivedConfig
 
+    /// Configuration for the first shell spawned by this controller. The quick
+    /// terminal delays creating its surface until it is shown, so this must be
+    /// retained separately from the initially empty surface tree.
+    private var initialSurfaceConfig: Ghostty.SurfaceConfiguration?
+
     /// Tracks if we're currently handling a manual resize to prevent recursion
     private var isHandlingResize: Bool = false
 
@@ -45,6 +50,7 @@ class QuickTerminalController: BaseTerminalController {
     ) {
         self.position = position
         self.derivedConfig = DerivedConfig(ghostty.config)
+        self.initialSurfaceConfig = base
         // The window we manage is not restorable if we've specified a command
         // to execute. We do this because the restored window is meaningless at the
         // time of writing this: it'd just restore to a shell in the same directory
@@ -379,12 +385,13 @@ class QuickTerminalController: BaseTerminalController {
                     }
                 }
             } else {
-                var config = Ghostty.SurfaceConfiguration()
+                var config = initialSurfaceConfig ?? Ghostty.SurfaceConfiguration()
                 config.environmentVariables["GHOSTTY_QUICK_TERMINAL"] = "1"
 
                 let view = Ghostty.SurfaceView(ghostty_app, baseConfig: config)
                 surfaceTree = SplitTree(view: view)
                 focusedSurface = view
+                initialSurfaceConfig = nil
             }
         }
 

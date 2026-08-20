@@ -113,6 +113,10 @@ class AppDelegate: NSObject,
     /// The current state of the quick terminal.
     private var quickTerminalControllerState: QuickTerminalState = .uninitialized
 
+    /// Floating terminal buffers keyed by the surface of their parent tab.
+    /// Each buffer retains its own shell, scrollback, and working directory.
+    private var quickTerminalControllers: [UUID: QuickTerminalController] = [:]
+
     /// Whether the quick terminal has already been initialized.
     var quickControllerInitialized: Bool {
         if case .initialized = quickTerminalControllerState {
@@ -146,6 +150,22 @@ class AppDelegate: NSObject,
             quickTerminalControllerState = .initialized(controller)
             return controller
         }
+    }
+
+    /// The focused terminal surface in the tab currently selected by the user.
+    private var quickTerminalSource: Ghostty.SurfaceView? {
+        let windows = [
+            NSApp.keyWindow?.tabGroup?.selectedWindow,
+            NSApp.mainWindow?.tabGroup?.selectedWindow,
+            NSApp.keyWindow,
+            NSApp.mainWindow,
+            TerminalController.preferredParent?.window,
+        ]
+        let controller = windows
+            .compactMap { $0?.windowController as? TerminalController }
+            .first
+
+        return controller?.focusedSurface
     }
 
     /// Manages updates
@@ -982,7 +1002,30 @@ class AppDelegate: NSObject,
     }
 
     @IBAction func toggleQuickTerminal(_ sender: Any) {
-        quickController.toggle()
+        guard let source = quickTerminalSource else {
+            quickController.toggle()
+            return
+        }
+
+        let controller = quickTerminalControllers[source.id] ?? {
+            var config = Ghostty.SurfaceConfiguration()
+            config.workingDirectory = source.pwd
+
+            let controller = QuickTerminalController(
+                ghostty,
+                position: derivedConfig.quickTerminalPosition,
+                baseConfig: config,
+                restorationState: nil
+            )
+            quickTerminalControllers[source.id] = controller
+            return controller
+        }()
+
+        for (id, candidate) in quickTerminalControllers where id != source.id && candidate.visible {
+            candidate.animateOut()
+        }
+
+        controller.toggle()
     }
 
     /// Toggles visibility of all Ghosty Terminal windows. When hidden, activates Ghostty as the frontmost application
@@ -1032,7 +1075,7 @@ class AppDelegate: NSObject,
         init() {
             self.initialWindow = true
             self.shouldQuitAfterLastWindowClosed = false
-            self.quickTerminalPosition = .top
+            self.quickTerminalPosition = .center
         }
 
         init(_ config: Ghostty.Config) {

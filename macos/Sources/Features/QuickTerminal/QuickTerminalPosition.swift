@@ -86,7 +86,9 @@ enum QuickTerminalPosition: String {
                 y: round(screen.visibleFrame.origin.y + (screen.visibleFrame.height - window.frame.height) / 2))
 
         case .center:
-            return .init(x: round(screen.visibleFrame.origin.x + (screen.visibleFrame.width - window.frame.width) / 2), y: screen.visibleFrame.height - window.frame.width)
+            // A centered floating terminal fades in place instead of sliding in
+            // from a screen edge like the drop-down variants.
+            return finalOrigin(for: window, on: screen)
         }
     }
 

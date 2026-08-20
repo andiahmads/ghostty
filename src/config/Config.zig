@@ -2713,9 +2713,12 @@ keybind: Keybinds = .{},
 /// On macOS, changing this configuration requires restarting Ghostty
 /// completely.
 ///
-/// Note: There is no default keybind for toggling the quick terminal.
-/// To enable this feature, bind the `toggle_quick_terminal` action to a key.
-@"quick-terminal-position": QuickTerminalPosition = .top,
+/// On macOS, Momok binds the quick terminal to `` Cmd+` `` by default. You can
+/// override or remove this binding with `keybind` in your configuration.
+///
+/// On other platforms, bind the `toggle_quick_terminal` action to a key to
+/// enable this feature.
+@"quick-terminal-position": QuickTerminalPosition = .center,
 
 /// The size of the quick terminal.
 ///
@@ -6548,6 +6551,18 @@ pub const Keybinds = struct {
             .{ .key = .{ .unicode = ',' }, .mods = inputpkg.ctrlOrSuper(.{}) },
             .{ .open_config = .default },
         );
+
+        // Momok uses a Quake-style quick terminal as its floating terminal.
+        // Keep the shell alive while it is hidden, and make it available with
+        // the familiar Cmd+` shortcut even while another application is active.
+        if (comptime builtin.target.os.tag.isDarwin()) {
+            try self.set.putFlags(
+                alloc,
+                .{ .key = .{ .unicode = '`' }, .mods = .{ .super = true } },
+                .{ .toggle_quick_terminal = {} },
+                .{ .global = true },
+            );
+        }
 
         {
             try self.set.put(
